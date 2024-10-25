@@ -30,4 +30,5 @@ module "front_door" {
     resource_groups = local.resource_groups_all
     zones = local.zones
     origin_host_name             = module.storage-account[each.key].storage-account-object.primary_web_host
+    tags = var.tags
 }
