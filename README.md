@@ -36,5 +36,8 @@ No resources.
 
 ## Outputs
 
-No outputs.
+| Name | Description |
+|------|-------------|
+| <a name="output_static-website-fdn"></a> [static-website-fdn](#output\_static-website-fdn) | Outputs the entire front door profile module associated with the static website |
+| <a name="output_static-website-sa"></a> [static-website-sa](#output\_static-website-sa) | Outputs the entire storage account associated with the static website |
 <!-- END_TF_DOCS -->
