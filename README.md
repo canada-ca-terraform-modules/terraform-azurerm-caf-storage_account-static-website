@@ -6,18 +6,26 @@ No requirements.
 
 ## Providers
 
-No providers.
+| Name | Version |
+|------|---------|
+| <a name="provider_azuread"></a> [azuread](#provider\_azuread) | n/a |
+| <a name="provider_azurerm"></a> [azurerm](#provider\_azurerm) | n/a |
 
 ## Modules
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_front_door"></a> [front\_door](#module\_front\_door) | github.com/canada-ca-terraform-modules/terraform-azurerm-caf-front-door.git | v1.0.0 |
-| <a name="module_storage-account"></a> [storage-account](#module\_storage-account) | github.com/canada-ca-terraform-modules/terraform-azurerm-caf-storage_accountV2.git | v1.0.4 |
+| <a name="module_front_door"></a> [front\_door](#module\_front\_door) | github.com/canada-ca-terraform-modules/terraform-azurerm-caf-front-door.git | v1.0.1 |
+| <a name="module_storage-account"></a> [storage-account](#module\_storage-account) | github.com/canada-ca-terraform-modules/terraform-azurerm-caf-storage_accountV2.git | v1.0.5 |
 
 ## Resources
 
-No resources.
+| Name | Type |
+|------|------|
+| [azuread_group.sa-access-group](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/resources/group) | resource |
+| [azurerm_role_assignment.sa-blob-contributor](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
+| [azuread_users.sa-access-group-members](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/users) | data source |
+| [azuread_users.sa-access-group-owners](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/users) | data source |
 
 ## Inputs
 
