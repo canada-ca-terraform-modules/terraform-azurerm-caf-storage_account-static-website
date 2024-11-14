@@ -1,0 +1,185 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- main
+- dev 
+
+parameters:
+  - name: environments
+    type: object
+    default:
+      - branchName: 'refs/heads/main'
+        storageAccount: '<storage account name>'
+        serviceConnection: '<service connection for L2>'
+        pool: '<agent pool for L2>'
+      # - branchName: 'refs/heads/dev'
+      #   storageAccount: 'g3dcwebsite1sa56e61609'
+      #   serviceConnection: 'cto-eslz-test'
+      #   pool: 'Devops'
+
+stages:
+  - stage: StartAgents
+    pool:
+      vmImage: ubuntu-latest
+    jobs:
+    - job: StartAgent
+      steps:
+      - checkout: none 
+      - ${{ each environment in parameters.environments }}:
+        - ${{ if eq(environment.branchName, variables['Build.SourceBranch']) }}:
+          - task: AzureCLI@2
+            inputs: 
+              azureSubscription: ${{ environment.serviceConnection }}
+              scriptType: 'bash'
+              scriptLocation: 'inlineScript'
+              addSpnToEnvironment: true
+              inlineScript: |
+                #!/bin/bash
+                function start_container_instance() {
+                  local subId=$1
+
+                  # Get the resource group name that contains "Management-rg" or "Devops-Agent-rg"
+                  local resourceGroup=$(az group list --query "[?contains(name, 'Management-rg')].{Name:name}" --subscription $subId -o tsv)
+                  
+                  # Check if the resource group exists, if not, skip launching.
+                  if [[ -z "$resourceGroup" ]]; then
+                      return 0
+                  fi
+                  # Get the container instance name with the tag 'orgName' equal to the org URL
+                  local containerInstance=$(az container list -g $resourceGroup --query "[?tags.orgName=='$(System.CollectionUri)'].name" --subscription $subId -o tsv)
+                  # start container if found
+                  if [[ -z "$containerInstance" ]]; then
+                      echo "No applicable container instance found"
+                      return 0
+                  fi
+                  echo "starting ACI $containerInstance in resource group $resourceGroup"
+                  az container start --resource-group $resourceGroup -n $containerInstance --subscription $subId
+                }
+                echo $ESLZ_JSON
+                ENDPOINTS_JSON=$(curl -s -H "Authorization: Bearer $SYSTEM_ACCESSTOKEN" -H "Content-Type: application/json" "$(System.CollectionUri)$(System.TeamProject)/_apis/serviceendpoint/endpoints?type=azurerm&api-version=7.1")
+                # Extract unique serviceConnection names
+                serviceConnections=$(echo $ESLZ_JSON | jq -r '.serviceConnection' | sort | uniq)
+                # Loop through each serviceConnection and find the matching subscriptionId
+                declare -A subscriptionIds
+                for serviceConnection in $serviceConnections; do
+                  subscriptionId=$(echo $ENDPOINTS_JSON | jq -r --arg name "$serviceConnection" '.value[] | select(.name==$name) | .data.subscriptionId')
+                  if [[ -n "$subscriptionId" && -z "${subscriptionIds[$subscriptionId]}" ]]; then
+                    # Mark this subscriptionId as 'seen'
+                    subscriptionIds[$subscriptionId]=1
+                    # Run the function to start in parallel
+                    start_container_instance $subscriptionId &
+                  fi
+                done
+                # wait for all parallel functions to be done
+                wait
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+              ESLZ_JSON: ${{ convertToJson(environment) }}
+
+  - stage: TransferFiles
+    variables:
+      ${{ each environment in parameters.environments }}:
+        ${{ if eq(environment.branchName, variables['Build.SourceBranch']) }}:
+          PoolName: ${{ environment.pool }}
+          sc: ${{ environment.serviceConnection }}
+          sa-name: ${{ environment.storageAccount }}
+    jobs:
+    - ${{ each environment in parameters.environments }}:
+        - ${{ if eq(environment.branchName, variables['Build.SourceBranch']) }}:
+          - job: TransferFiles
+            pool: 
+              name: ${{ environment.pool }}
+            steps: 
+            - task: AzureCLI@2
+              inputs:
+                azureSubscription: ${{ environment.serviceConnection }}
+                scriptType: 'bash'
+                scriptLocation: 'inlineScript'
+                inlineScript: |
+                  #!/bin/bash
+
+                  # Set the variables
+                  storage_account_name=$STORAGEACCOUNTNAME
+                  container_name="\$web"
+
+                  export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
+                  export AZCOPY_TENANT_ID=7198d08c-c362-4703-9854-53b6f0d8fc44
+
+                  if ! command -v azcopy &> /dev/null; then
+                    curl -sSL -O https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb
+                    sudo dpkg -i packages-microsoft-prod.deb
+                    rm packages-microsoft-prod.deb
+                    sudo apt-get update
+                    sudo apt-get install azcopy
+                  fi
+
+                  azcopy sync './root/' "https://${storage_account_name}.blob.core.windows.net/${container_name}" --recursive
+                visibleAzLogin: false
+              env:
+                STORAGEACCOUNTNAME: ${{ environment.storageAccount }}
+
+  - stage: StopContainers
+    pool:
+      vmImage: ubuntu-latest
+    jobs:
+    - job: StopAgents
+      steps: 
+      - checkout: none
+      - ${{ each environment in parameters.environments }}:
+        - ${{ if eq(environment.branchName, variables['Build.SourceBranch']) }}:
+          - task: AzureCLI@2
+            name: StopAgents
+            inputs:
+              azureSubscription: ${{ environment.serviceConnection }}
+              scriptType: bash
+              scriptLocation: inlineScript
+              addSpnToEnvironment: true
+              inlineScript: |
+                #!/bin/bash
+                function stop_container_instance() {
+                    local subId=$1
+
+                    # Get the resource group name that contains "Management-rg" or "Devops-Agent-rg"
+                    local resourceGroup=$(az group list --query "[?contains(name, 'Management-rg')].{Name:name}" --subscription $subId -o tsv)
+                    
+                    # Check if the resource group exists, if not, skip launching.
+                    if [[ -z "$resourceGroup" ]]; then
+                        return 0
+                    fi
+                    # Get the container instance name with the tag 'orgName' equal to the org URL
+                    local containerInstance=$(az container list -g $resourceGroup --query "[?tags.orgName=='$(System.CollectionUri)'].name" --subscription $subId -o tsv)
+                    # start container if found
+                    if [[ -z "$containerInstance" ]]; then
+                        echo "No applicable container instance found"
+                        return 0
+                    fi
+                    echo "stopping ACI $containerInstance in resource group $resourceGroup"
+                    az container stop --resource-group $resourceGroup -n $containerInstance --subscription $subId
+                }
+
+                ENDPOINTS_JSON=$(curl -s -H "Authorization: Bearer $SYSTEM_ACCESSTOKEN" -H "Content-Type: application/json" "$(System.CollectionUri)$(System.TeamProject)/_apis/serviceendpoint/endpoints?type=azurerm&api-version=7.1")
+
+                # Extract unique serviceConnection names
+                serviceConnections=$(echo $ESLZ_JSON | jq -r '.serviceConnection' | sort | uniq)
+                # Loop through each serviceConnection and find the matching subscriptionId
+                declare -A subscriptionIds
+                for serviceConnection in $serviceConnections; do
+                  subscriptionId=$(echo $ENDPOINTS_JSON | jq -r --arg name "$serviceConnection" '.value[] | select(.name==$name) | .data.subscriptionId')
+                  if [[ -n "$subscriptionId" && -z "${subscriptionIds[$subscriptionId]}" ]]; then
+                    # Mark this subscriptionId as 'seen'
+                    subscriptionIds[$subscriptionId]=1
+                    # Run the function to start in parallel
+                    stop_container_instance $subscriptionId &
+
+                  fi
+                done
+                # wait for all parallel functions to be done
+                wait
+
+              visibbleAzLogin: false
+            env:
+              SYSTEM_ACCESSTOKEN: $(System.AccessToken)
+              ESLZ_JSON: ${{ convertToJson(environment) }}
