@@ -22,10 +22,8 @@ No requirements.
 
 | Name | Type |
 |------|------|
-| [azuread_group.sa-access-group](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/resources/group) | resource |
-| [azurerm_role_assignment.sa-blob-contributor](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
-| [azuread_users.sa-access-group-members](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/users) | data source |
-| [azuread_users.sa-access-group-owners](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/users) | data source |
+| [azurerm_role_assignment.blob-contributor-devops-sp](https://registry.terraform.io/providers/hashicorp/azurerm/latest/docs/resources/role_assignment) | resource |
+| [azuread_service_principal.devops-sp](https://registry.terraform.io/providers/hashicorp/azuread/latest/docs/data-sources/service_principal) | data source |
 
 ## Inputs
 
