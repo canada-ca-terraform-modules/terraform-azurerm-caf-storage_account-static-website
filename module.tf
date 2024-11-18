@@ -32,5 +32,5 @@ data "azuread_service_principal" "devops-sp" {
 resource "azurerm_role_assignment" "blob-contributor-devops-sp" {
   scope = module.storage-account.id
   role_definition_name = "Storage Blob Data Contributor"
-  principal_id = data.azuread_service_principal.devops-sp.id
+  principal_id = data.azuread_service_principal.devops-sp.object_id
 }
