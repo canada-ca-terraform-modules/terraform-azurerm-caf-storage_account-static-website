@@ -1,3 +1,6 @@
+resourceGroups = {
+  "portal_static_website" = {}
+}
 
 static_websites = {
   website1 = { # Key defines the userDefinedString part of the name of your resource               
