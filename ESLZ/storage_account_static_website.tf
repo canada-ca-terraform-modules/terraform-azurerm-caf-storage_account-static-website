@@ -6,7 +6,7 @@ variable "static_websites" {
 
 
 module "static_websites" {
-  source = "github.com/canada-ca-terraform-modules/terraform-azurerm-caf-storage_account-static-website.git?ref=v1.0.3"
+  source = "github.com/canada-ca-terraform-modules/terraform-azurerm-caf-storage_account-static-website.git?ref=v1.0.4"
   for_each = var.static_websites
   userDefinedString = each.key
   location = var.location
