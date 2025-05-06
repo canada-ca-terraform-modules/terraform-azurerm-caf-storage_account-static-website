@@ -17,7 +17,7 @@ locals {
 
 # stage/mysql/terragrunt.hcl
 include "remote" {
-  path   = find_in_parent_folders("terragrunt.hcl")
+  path   = try(find_in_parent_folders("root.hcl"), find_in_parent_folders("terragrunt.hcl"))
   expose = true
 }
 
