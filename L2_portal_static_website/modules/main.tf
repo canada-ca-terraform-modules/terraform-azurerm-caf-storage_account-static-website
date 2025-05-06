@@ -6,7 +6,7 @@ terraform {
       version = "~> 4.0.0"
     }
   }
-  required_version = ">= 1.7.3"
+  required_version = ">= 1.7.3, <2.0.0" # Ensure we get a signal for a major version bump to 2.x
 }
 
 provider "azurerm" {
