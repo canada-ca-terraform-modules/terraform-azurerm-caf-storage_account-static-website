@@ -17,7 +17,7 @@ module "front_door" {
     env = var.env
     group = var.group
     project = var.project
-    userDefinedString = "${var.userDefinedString}-fd"
+    userDefinedString = "${var.userDefinedString}"
     front_door = var.static_websites.front_door
     resource_groups = var.resource_groups
     zones = var.zones
