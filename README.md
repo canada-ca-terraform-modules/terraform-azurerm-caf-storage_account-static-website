@@ -15,7 +15,7 @@ No requirements.
 
 | Name | Source | Version |
 |------|--------|---------|
-| <a name="module_front_door"></a> [front\_door](#module\_front\_door) | github.com/canada-ca-terraform-modules/terraform-azurerm-caf-front-door.git | v1.0.3 |
+| <a name="module_front_door"></a> [front\_door](#module\_front\_door) | github.com/canada-ca-terraform-modules/terraform-azurerm-caf-front-door.git | v1.0.4 |
 | <a name="module_storage-account"></a> [storage-account](#module\_storage-account) | github.com/canada-ca-terraform-modules/terraform-azurerm-caf-storage_accountV2.git | v1.0.5 |
 
 ## Resources
